@@ -1,7 +1,7 @@
 {
   "name": "@juanbenjumea/opencode-go-usage",
-  "version": "0.1.0",
-  "description": "Parse OpenCode Go workspace dashboard HTML for usage windows (shared by Pi extensions).",
+  "version": "0.1.1",
+  "description": "Parse OpenCode Go workspace dashboard HTML for usage windows and fetch usage (shared by Pi extensions).",
   "type": "module",
   "license": "MIT",
   "author": "Juan Benjumea",
@@ -24,8 +24,10 @@
     ".": "./index.ts",
     "./types.ts": "./lib/types.ts",
     "./dashboard.ts": "./lib/dashboard.ts",
+    "./fetch.ts": "./lib/fetch.ts",
     "./lib/types.ts": "./lib/types.ts",
-    "./lib/dashboard.ts": "./lib/dashboard.ts"
+    "./lib/dashboard.ts": "./lib/dashboard.ts",
+    "./lib/fetch.ts": "./lib/fetch.ts"
   },
   "files": [
     "index.ts",
