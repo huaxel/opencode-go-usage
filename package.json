@@ -1,0 +1,37 @@
+{
+  "name": "@juanbenjumea/opencode-go-usage",
+  "version": "0.1.0",
+  "description": "Parse OpenCode Go workspace dashboard HTML for usage windows (shared by Pi extensions).",
+  "type": "module",
+  "license": "MIT",
+  "author": "Juan Benjumea",
+  "keywords": [
+    "opencode",
+    "opencode-go",
+    "dashboard",
+    "usage"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/juanbenjumea/dotfiles.git",
+    "directory": "pi/packages/opencode-go-usage"
+  },
+  "homepage": "https://github.com/juanbenjumea/dotfiles/tree/main/pi/packages/opencode-go-usage#readme",
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "exports": {
+    ".": "./index.ts",
+    "./types.ts": "./lib/types.ts",
+    "./dashboard.ts": "./lib/dashboard.ts"
+  },
+  "files": [
+    "index.ts",
+    "lib/",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "test": "node --experimental-strip-types --test tests/*.test.ts"
+  }
+}
