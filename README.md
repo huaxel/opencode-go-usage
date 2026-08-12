@@ -1,40 +1,57 @@
 # @juanbenjumea/opencode-go-usage
 
-Small library (not a Pi extension) that fetches OpenCode Go usage windows (rolling / weekly / monthly).
+Shared **provider usage** library for Pi extensions, agentq, and other tooling.
 
-**Primary path (v0.2.0+):** the official usage API — `GET https://opencode.ai/zen/go/v1/usage` with the same API key used for chat completions. No workspace cookies, no HTML scraping.
+Despite the name (historical), this package covers more than OpenCode Go:
 
-**Legacy fallback:** parses the OpenCode Go workspace dashboard HTML (`usagePercent` / `resetInSec` regexes) for configs that predate the API.
+| Provider | Auth | Source |
+|---|---|---|
+| **OpenCode Go** | API key (same as chat) | `GET https://opencode.ai/zen/go/v1/usage` |
+| **Cursor** | `quota-sessions.json`, env, CodexBar, Cursor app DB | `cursor.com/api/usage-summary` |
+| **CommandCode** | `quota-sessions.json`, env, CodexBar | `api.commandcode.ai/internal/billing/*` |
 
-Used by:
+Legacy OpenCode Go dashboard cookie scraping remains as a fallback when no API key is configured.
 
-- `@juanbenjumea/pi-multi-opencode-go` — account rotation
-- `@juanbenjumea/pi-dynamic-footer` — quota bars
+## Install
 
-## API
+```bash
+npm install @juanbenjumea/opencode-go-usage
+```
 
-```typescript
+Monorepo consumers: `"@juanbenjumea/opencode-go-usage": "file:../opencode-go-usage"`.
+
+## OpenCode Go (API-first)
+
+```ts
 import { fetchUsageApi } from "@juanbenjumea/opencode-go-usage";
 
-// Official API — key only, no cookies.
-const usage = await fetchUsageApi("sk-...");
-// { rolling: { usagePercent, resetInSec, status? } | null, weekly: ..., monthly: ..., error? }
-
-// Legacy dashboard scrape (cookie auth) — kept for backwards compatibility.
-import { fetchDashboardUsage } from "@juanbenjumea/opencode-go-usage/lib/fetch.ts";
-const legacy = await fetchDashboardUsage("wrk_...", "Fe26.2**...");
+const usage = await fetchUsageApi(process.env.OPENCODE_GO_KEY!);
+// { rolling, weekly, monthly, error? }
 ```
 
-## Test
+## Cursor / CommandCode
 
-```bash
-npm test
+```ts
+import { fetchCursorUsage } from "@juanbenjumea/opencode-go-usage/cursor.ts";
+import { fetchCommandCodeUsage } from "@juanbenjumea/opencode-go-usage/commandcode.ts";
+
+// Footer labels (Plan / Auto / API)
+await fetchCursorUsage();
+
+// agentq labels (total / auto-composer / api-models)
+await fetchCursorUsage({ labelStyle: "agentq" });
+
+await fetchCommandCodeUsage();
 ```
 
-## Publish
+Auth resolution order: `quota-sessions.json` → env vars → legacy `auth.json` cookies → CodexBar manual cookies → (Cursor only) desktop app token.
 
-```bash
-npm publish --access public
-```
+## Consumers
 
-MIT
+- `@juanbenjumea/pi-dynamic-footer` — subscription quota bars
+- `@juanbenjumea/pi-multi-opencode-go` — failover usage polling
+- **agentq** — `data/quota.json` collector
+
+## Future
+
+A rename to `@juanbenjumea/provider-usage` may happen in a major release; subpath exports will remain stable through 0.x.

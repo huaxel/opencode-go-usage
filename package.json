@@ -1,15 +1,18 @@
 {
   "name": "@juanbenjumea/opencode-go-usage",
-  "version": "0.2.0",
-  "description": "Fetch OpenCode Go usage via the official API (rolling/weekly/monthly) with legacy dashboard parsing fallback (shared by Pi extensions).",
+  "version": "0.3.0",
+  "description": "Shared provider usage fetchers for Pi extensions and agentq: OpenCode Go API, Cursor and CommandCode billing, quota-sessions auth.",
   "type": "module",
   "license": "MIT",
   "author": "Juan Benjumea",
   "keywords": [
     "opencode",
     "opencode-go",
-    "dashboard",
-    "usage"
+    "cursor",
+    "commandcode",
+    "quota",
+    "usage",
+    "dashboard"
   ],
   "repository": {
     "type": "git",
@@ -29,7 +32,13 @@
     "./lib/types.ts": "./lib/types.ts",
     "./lib/dashboard.ts": "./lib/dashboard.ts",
     "./lib/fetch.ts": "./lib/fetch.ts",
-    "./lib/usage-api.ts": "./lib/usage-api.ts"
+    "./lib/usage-api.ts": "./lib/usage-api.ts",
+    "./auth.ts": "./lib/auth/auth.ts",
+    "./web-sessions.ts": "./lib/auth/web-sessions.ts",
+    "./cursor.ts": "./lib/cursor/cursor.ts",
+    "./commandcode.ts": "./lib/commandcode/commandcode.ts",
+    "./format.ts": "./lib/shared/format.ts",
+    "./quota-types.ts": "./lib/shared/quota-types.ts"
   },
   "files": [
     "index.ts",
