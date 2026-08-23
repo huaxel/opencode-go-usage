@@ -3,7 +3,7 @@ import { existsSync } from "node:fs";
 import { homedir } from "node:os";
 import { join } from "node:path";
 
-import { loadAuthJson, resolveAuthValue } from "../auth/auth.ts";
+import { authProviderBlock, loadAuthJson, resolveAuthValue } from "../auth/auth.ts";
 import { codexBarProviderCookie, envCookie } from "../auth/codexbar-config.ts";
 import { quotaSessionCookie } from "../auth/web-sessions.ts";
 
@@ -69,8 +69,8 @@ export function resolveCursorCookieHeader(): string | undefined {
   if (session) return session;
 
   const auth = loadAuthJson();
-  const entry = auth.cursor;
-  if (entry && typeof entry === "object") {
+  const entry = authProviderBlock(auth, "cursor");
+  if (entry) {
     const cookie = resolveAuthValue(entry.cookie);
     if (cookie) return cookie.trim();
   }

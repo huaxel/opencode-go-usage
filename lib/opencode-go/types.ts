@@ -11,6 +11,15 @@ export interface OpenCodeGoDashboardUsage {
   monthly: OpenCodeGoWindow | null;
 }
 
+/** Normalized usage result shared by the dashboard fetch and the usage API. */
+export interface OpenCodeGoUsageResult {
+  rolling: OpenCodeGoWindow | null;
+  weekly: OpenCodeGoWindow | null;
+  monthly: OpenCodeGoWindow | null;
+  /** Short error label; "auth-expired" when the workspace URL check failed. */
+  error?: string;
+}
+
 /** Raw shape of the official usage API response. */
 export interface OpenCodeGoApiWindow {
   status?: string;

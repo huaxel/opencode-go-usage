@@ -1,6 +1,6 @@
 import type { QuotaSnapshot, QuotaWindow } from "../shared/quota-types.ts";
 import { clampPercent, formatResetTime, safeError } from "../shared/format.ts";
-import { loadAuthJson, resolveAuthValue } from "../auth/auth.ts";
+import { authProviderBlock, loadAuthJson, resolveAuthValue } from "../auth/auth.ts";
 import { codexBarProviderCookie, envCookie } from "../auth/codexbar-config.ts";
 import { quotaSessionCookie } from "../auth/web-sessions.ts";
 
@@ -80,8 +80,8 @@ export function resolveCommandCodeCookieHeader(): string | undefined {
   if (session) return extractSessionCookie(session);
 
   const auth = loadAuthJson();
-  const entry = auth.commandcode;
-  if (entry && typeof entry === "object") {
+  const entry = authProviderBlock(auth, "commandcode");
+  if (entry) {
     const cookie = resolveAuthValue(entry.cookie);
     if (cookie) return extractSessionCookie(cookie);
   }

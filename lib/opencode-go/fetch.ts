@@ -4,15 +4,9 @@
 // to duplicate this fetch + auth-URL check + parse chain. This module is the
 // single source of truth; consumers wrap it with their own shapes.
 import { isAuthenticatedWorkspaceUrl, parseOpenCodeGoDashboard } from "./dashboard.ts";
-import type { OpenCodeGoWindow } from "./types.ts";
+import type { OpenCodeGoUsageResult, OpenCodeGoWindow } from "./types.ts";
 
-export interface OpenCodeGoUsageResult {
-  rolling: OpenCodeGoWindow | null;
-  weekly: OpenCodeGoWindow | null;
-  monthly: OpenCodeGoWindow | null;
-  /** Short error label; "auth-expired" when the workspace URL check failed. */
-  error?: string;
-}
+export type { OpenCodeGoUsageResult };
 
 export interface FetchDashboardUsageOptions {
   /** Abort timeout in ms (default 10_000). */

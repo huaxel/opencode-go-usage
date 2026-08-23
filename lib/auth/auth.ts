@@ -20,6 +20,19 @@ export function loadAuthJson(): JsonObject {
   return {};
 }
 
+/**
+ * Extract a provider block from auth.json as a plain object, when present.
+ * The raw auth entry narrows to `object` after a typeof check, which has no
+ * index signature, so this casts once to keep callers typed.
+ */
+export function authProviderBlock(
+  auth: JsonObject,
+  key: string,
+): JsonObject | undefined {
+  const entry = auth[key];
+  return entry && typeof entry === "object" ? (entry as JsonObject) : undefined;
+}
+
 export function resolveAuthValue(value: unknown): string | undefined {
   if (typeof value !== "string") return undefined;
   const trimmed = value.trim();
