@@ -37,6 +37,7 @@
     "./web-sessions.ts": "./lib/auth/web-sessions.ts",
     "./cursor.ts": "./lib/cursor/cursor.ts",
     "./commandcode.ts": "./lib/commandcode/commandcode.ts",
+    "./openference.ts": "./lib/openference/openference.ts",
     "./format.ts": "./lib/shared/format.ts",
     "./quota-types.ts": "./lib/shared/quota-types.ts"
   },

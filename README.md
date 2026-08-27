@@ -9,6 +9,7 @@ Despite the name (historical), this package covers more than OpenCode Go:
 | **OpenCode Go** | API key (same as chat) | `GET https://opencode.ai/zen/go/v1/usage` |
 | **Cursor** | `quota-sessions.json`, env, CodexBar, Cursor app DB | `cursor.com/api/usage-summary` |
 | **CommandCode** | `quota-sessions.json`, env, CodexBar | `api.commandcode.ai/internal/billing/*` |
+| **Openference** | API key from caller, `OPENFERENCE_API_KEY`, or `auth.json` | `GET https://api.openference.com/v1/usage` |
 
 Legacy OpenCode Go dashboard cookie scraping remains as a fallback when no API key is configured.
 
@@ -34,6 +35,7 @@ const usage = await fetchUsageApi(process.env.OPENCODE_GO_KEY!);
 ```ts
 import { fetchCursorUsage } from "@juanbenjumea/opencode-go-usage/cursor.ts";
 import { fetchCommandCodeUsage } from "@juanbenjumea/opencode-go-usage/commandcode.ts";
+import { fetchOpenferenceUsage } from "@juanbenjumea/opencode-go-usage/openference.ts";
 
 // Footer labels (Plan / Auto / API)
 await fetchCursorUsage();
@@ -42,9 +44,11 @@ await fetchCursorUsage();
 await fetchCursorUsage({ labelStyle: "agentq" });
 
 await fetchCommandCodeUsage();
+
+const openference = await fetchOpenferenceUsage(process.env.OPENFERENCE_API_KEY);
 ```
 
-Auth resolution order: `quota-sessions.json` → env vars → legacy `auth.json` cookies → CodexBar manual cookies → (Cursor only) desktop app token.
+Auth resolution order: provider-specific explicit key → environment variable → `auth.json` credential. For Cursor and CommandCode cookies, the existing order is `quota-sessions.json` → env vars → legacy `auth.json` cookies → CodexBar manual cookies → (Cursor only) desktop app token.
 
 ## Consumers
 
