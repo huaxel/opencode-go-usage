@@ -1,9 +1,22 @@
+// Openference usage via the dashboard profile endpoint.
+//
+// Openference exposes no usage endpoint on its inference API
+// (api.openference.com/v1). The dashboard's `/user/usage` analytics page calls
+// `GET /api/user/usage`, but the per-window quota bars are served by the
+// profile endpoint `GET /api/user/me` on the web host (openference.com), which
+// the same inference API key authenticates via Bearer. The response carries a
+// `usage` object (cost-weighted quota used), a `plan` object (window/weekly
+// allowances), and a `limits` object (epoch-ms reset timestamps). The web UI's
+// `tst()` helper prefers `windowQuotaUsed` over `windowRequests` as the used
+// value, and `plan.requestsPerWindow`/`plan.requestsPerWeek` as the limits —
+// this parser mirrors that.
 import type { QuotaSnapshot, QuotaWindow } from "../shared/quota-types.ts";
 import { clampPercent, safeError } from "../shared/format.ts";
 import { authCredential, resolveAuthValue } from "../auth/auth.ts";
 
-export const OPENFERENCE_USAGE_URL = "https://api.openference.com/v1/usage";
+export const OPENFERENCE_USAGE_URL = "https://openference.com/api/user/me";
 const MAX_RESPONSE_BYTES = 64 * 1024;
+const DEFAULT_WINDOW_HOURS = 5;
 
 interface JsonObject {
   [key: string]: unknown;
@@ -24,20 +37,9 @@ function asObject(value: unknown): JsonObject | undefined {
     : undefined;
 }
 
-function numberField(source: JsonObject, names: string[]): number | undefined {
-  for (const name of names) {
-    const value = Number(source[name]);
-    if (Number.isFinite(value)) return value;
-  }
-  return undefined;
-}
-
-function stringField(source: JsonObject, names: string[]): string | undefined {
-  for (const name of names) {
-    const value = source[name];
-    if (typeof value === "string" && value.trim()) return value.trim();
-  }
-  return undefined;
+function finiteNumber(value: unknown): number | undefined {
+  const n = Number(value);
+  return Number.isFinite(n) ? n : undefined;
 }
 
 function formatResetIn(seconds: number): string {
@@ -52,110 +54,78 @@ function formatResetIn(seconds: number): string {
   return remainingHours ? `${days}d${remainingHours}h` : `${days}d`;
 }
 
-function resetInSeconds(source: JsonObject, now: number): number | undefined {
-  const seconds = numberField(source, ["reset_after_seconds", "resetAfterSeconds", "resets_in", "resetsIn"]);
-  if (seconds !== undefined) return Math.max(0, Math.ceil(seconds));
-
-  const reset = numberField(source, ["resets_at", "resetsAt", "reset_at", "resetAt", "next_reset", "nextReset"]);
-  if (reset !== undefined) {
-    const milliseconds = reset > 10_000_000_000 ? reset : reset * 1000;
-    return Math.max(0, Math.ceil((milliseconds - now) / 1000));
-  }
-
-  const resetText = stringField(source, ["resets_at", "resetsAt", "reset_at", "resetAt", "next_reset", "nextReset"]);
-  if (resetText) {
-    const milliseconds = Date.parse(resetText);
-    if (Number.isFinite(milliseconds)) return Math.max(0, Math.ceil((milliseconds - now) / 1000));
-  }
-  return undefined;
+function resetInFromEpochMs(ms: unknown, now: number): string | undefined {
+  const value = finiteNumber(ms);
+  if (value === undefined) return undefined;
+  // Openference reports resets as epoch milliseconds.
+  const milliseconds = value > 10_000_000_000 ? value : value * 1000;
+  return formatResetIn(Math.max(0, Math.ceil((milliseconds - now) / 1000)));
 }
 
-const PERCENT_FIELDS = ["percent", "used_percent", "usedPercent", "usage_percent", "usagePercent", "percent_used", "percentUsed", "utilization"];
-const USED_FIELDS = ["used", "usage", "requests_used", "requestsUsed", "used_requests", "usedRequests", "consumed", "count", "requests"];
-const LIMIT_FIELDS = ["limit", "request_limit", "requestLimit", "requests_limit", "requestsLimit", "max", "capacity", "total"];
-const REMAINING_FIELDS = ["remaining", "requests_remaining", "requestsRemaining"];
-const RESET_FIELDS = ["resets_at", "resetsAt", "reset_at", "resetAt", "reset_after_seconds", "resetAfterSeconds"];
+/**
+ * Pick the "used" value for a window, mirroring the dashboard `tst()` helper:
+ * prefer `usage.<quotaKey>`, then `limits.<quotaKey>`, then `limits.<requestsKey>`
+ * (a cost-weighted quota is always preferred over a raw request count).
+ */
+function pickUsed(
+  usage: JsonObject | undefined,
+  limits: JsonObject | undefined,
+  quotaKey: string,
+  requestsKey: string,
+): number | undefined {
+  return (
+    finiteNumber(usage?.[quotaKey]) ??
+    finiteNumber(limits?.[quotaKey]) ??
+    finiteNumber(limits?.[requestsKey])
+  );
+}
 
-function parseWindow(source: JsonObject | undefined, now: number): QuotaWindow | null {
-  if (!source) return null;
+function pickLimit(plan: JsonObject | undefined, key: string): number | undefined {
+  const value = finiteNumber(plan?.[key]);
+  return value !== undefined && value > 0 ? value : undefined;
+}
 
-  let percent = numberField(source, PERCENT_FIELDS);
-  const used = numberField(source, USED_FIELDS);
-  const limit = numberField(source, LIMIT_FIELDS);
-  const remaining = numberField(source, REMAINING_FIELDS);
-
-  if (percent === undefined && used !== undefined && limit !== undefined && limit > 0) {
-    percent = (used / limit) * 100;
-  }
-  if (percent === undefined && remaining !== undefined && limit !== undefined && limit > 0) {
-    percent = ((limit - remaining) / limit) * 100;
-  }
-  if (percent === undefined || !Number.isFinite(percent)) return null;
-
-  const reset = resetInSeconds(source, now);
+function buildWindow(
+  used: number | undefined,
+  limit: number | undefined,
+  reset: string | undefined,
+  label: string,
+): QuotaWindow | null {
+  if (used === undefined || limit === undefined || limit <= 0) return null;
   return {
-    label: "",
-    usedPercent: clampPercent(percent),
-    resetsIn: reset === undefined ? undefined : formatResetIn(reset),
+    label,
+    usedPercent: clampPercent((used / limit) * 100),
+    resetsIn: reset,
   };
 }
 
-function candidateContainers(raw: JsonObject): JsonObject[] {
-  const containers = [raw, asObject(raw.usage), asObject(raw.quota), asObject(raw.data)];
-  return containers.filter((value): value is JsonObject => value !== undefined);
-}
-
-function findWindow(raw: JsonObject, names: string[], flatPrefixes: string[], now: number): QuotaWindow | null {
-  for (const container of candidateContainers(raw)) {
-    for (const name of names) {
-      const candidate = asObject(container[name]);
-      const parsed = parseWindow(candidate, now);
-      if (parsed) return parsed;
-    }
-
-    const flat: JsonObject = {};
-    for (const prefix of flatPrefixes) {
-      for (const [target, fields] of [
-        ["percent", PERCENT_FIELDS],
-        ["used", USED_FIELDS],
-        ["limit", LIMIT_FIELDS],
-        ["remaining", REMAINING_FIELDS],
-      ] as const) {
-        for (const field of fields) {
-          if (container[`${prefix}${field}`] !== undefined) flat[target] = container[`${prefix}${field}`];
-        }
-      }
-      for (const field of RESET_FIELDS) {
-        if (container[`${prefix}${field}`] !== undefined) flat[field] = container[`${prefix}${field}`];
-      }
-    }
-    const parsed = parseWindow(flat, now);
-    if (parsed) return parsed;
-
-    // A response with a single current-window object may put its fields
-    // directly under `usage`, rather than under `usage.window`.
-    if (names.includes("window") || names.includes("rolling")) {
-      const parsedDirect = parseWindow(container, now);
-      if (parsedDirect) return parsedDirect;
-    }
-  }
-  return null;
-}
-
-/** Parse a successful Openference usage response into footer windows. */
+/** Parse a successful `GET /api/user/me` response into footer windows. */
 export function parseOpenferenceUsage(raw: unknown, now: number = Date.now()): QuotaWindow[] {
   const object = asObject(raw);
   if (!object) return [];
 
+  const usage = asObject(object.usage);
+  const plan = asObject(object.plan);
+  const limits = asObject(object.limits);
+
   const windows: QuotaWindow[] = [];
-  const rolling = findWindow(object, ["window", "rolling", "current_window", "currentWindow", "five_hour", "fiveHour", "five_hour_window", "fiveHourWindow"], ["window_", "rolling_", "five_hour_", "fiveHour"], now);
-  if (rolling) windows.push({ ...rolling, label: "5h" });
 
-  const weekly = findWindow(object, ["weekly", "week", "weekly_window", "weekWindow"], ["weekly_", "week_"], now);
-  if (weekly) windows.push({ ...weekly, label: "Week" });
+  const windowHours = finiteNumber(plan?.windowHours) ?? DEFAULT_WINDOW_HOURS;
+  const window = buildWindow(
+    pickUsed(usage, limits, "windowQuotaUsed", "windowRequests"),
+    pickLimit(plan, "requestsPerWindow"),
+    resetInFromEpochMs(limits?.windowResetAt, now),
+    `${windowHours}h`,
+  );
+  if (window) windows.push(window);
 
-  const monthly = findWindow(object, ["monthly", "month", "monthly_window", "monthWindow"], ["monthly_", "month_"], now);
-  if (monthly) windows.push({ ...monthly, label: "Month" });
+  const week = buildWindow(
+    pickUsed(usage, limits, "weekQuotaUsed", "weekRequests"),
+    pickLimit(plan, "requestsPerWeek"),
+    resetInFromEpochMs(limits?.weeklyResetAt, now),
+    "Week",
+  );
+  if (week) windows.push(week);
 
   return windows;
 }
@@ -209,7 +179,7 @@ function quotaExceededWindows(raw: unknown, now: number): QuotaWindow[] {
   return [window];
 }
 
-/** Fetch Openference's authenticated quota endpoint. Never throws. */
+/** Fetch Openference's authenticated usage endpoint. Never throws. */
 export async function fetchOpenferenceUsage(
   apiKey?: string,
   options: FetchOpenferenceUsageOptions = {},
@@ -237,10 +207,12 @@ export async function fetchOpenferenceUsage(
       clearTimeout(timer);
     }
 
-    const body = await responseJson(response);
     if (response.status === 401 || response.status === 403) {
       return { provider: "Openference", windows: [], error: "auth-expired", fetchedAt };
     }
+
+    const body = await responseJson(response);
+
     if (response.status === 402) {
       const windows = quotaExceededWindows(body, now());
       if (windows.length > 0) return { provider: "Openference", windows, fetchedAt };

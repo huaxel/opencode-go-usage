@@ -9,7 +9,7 @@ Despite the name (historical), this package covers more than OpenCode Go:
 | **OpenCode Go** | API key (same as chat) | `GET https://opencode.ai/zen/go/v1/usage` |
 | **Cursor** | `quota-sessions.json`, env, CodexBar, Cursor app DB | `cursor.com/api/usage-summary` |
 | **CommandCode** | `quota-sessions.json`, env, CodexBar | `api.commandcode.ai/internal/billing/*` |
-| **Openference** | API key from caller, `OPENFERENCE_API_KEY`, or `auth.json` | `GET https://api.openference.com/v1/usage` |
+| **Openference** | API key from caller, `OPENFERENCE_API_KEY`, or `auth.json` | `GET https://openference.com/api/user/me` |
 
 Legacy OpenCode Go dashboard cookie scraping remains as a fallback when no API key is configured.
 
@@ -45,6 +45,9 @@ await fetchCursorUsage({ labelStyle: "agentq" });
 
 await fetchCommandCodeUsage();
 
+// Uses the dashboard profile endpoint (openference.com/api/user/me), which the
+// inference API key authenticates via Bearer. window = usage.windowQuotaUsed /
+// plan.requestsPerWindow, week = usage.weekQuotaUsed / plan.requestsPerWeek.
 const openference = await fetchOpenferenceUsage(process.env.OPENFERENCE_API_KEY);
 ```
 
