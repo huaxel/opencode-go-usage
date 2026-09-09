@@ -16,10 +16,12 @@
   ],
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/juanbenjumea/dotfiles.git",
-    "directory": "pi/packages/opencode-go-usage"
+    "url": "git+https://github.com/huaxel/opencode-go-usage.git"
   },
-  "homepage": "https://github.com/juanbenjumea/dotfiles/tree/main/pi/packages/opencode-go-usage#readme",
+  "bugs": {
+    "url": "https://github.com/huaxel/opencode-go-usage/issues"
+  },
+  "homepage": "https://github.com/huaxel/opencode-go-usage#readme",
   "engines": {
     "node": ">=20.0.0"
   },
