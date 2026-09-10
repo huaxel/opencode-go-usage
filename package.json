@@ -1,6 +1,6 @@
 {
   "name": "@juanbenjumea/opencode-go-usage",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "description": "Shared provider usage fetchers for Pi extensions and agentq: OpenCode Go API, Cursor and CommandCode billing, quota-sessions auth.",
   "type": "module",
   "license": "MIT",
@@ -26,35 +26,36 @@
     "node": ">=20.0.0"
   },
   "exports": {
-    ".": "./index.ts",
-    "./types.ts": "./lib/types.ts",
-    "./dashboard.ts": "./lib/dashboard.ts",
-    "./fetch.ts": "./lib/fetch.ts",
-    "./usage-api.ts": "./lib/usage-api.ts",
-    "./lib/types.ts": "./lib/types.ts",
-    "./lib/dashboard.ts": "./lib/dashboard.ts",
-    "./lib/fetch.ts": "./lib/fetch.ts",
-    "./lib/usage-api.ts": "./lib/usage-api.ts",
-    "./auth.ts": "./lib/auth/auth.ts",
-    "./web-sessions.ts": "./lib/auth/web-sessions.ts",
-    "./cursor.ts": "./lib/cursor/cursor.ts",
-    "./commandcode.ts": "./lib/commandcode/commandcode.ts",
-    "./openference.ts": "./lib/openference/openference.ts",
-    "./format.ts": "./lib/shared/format.ts",
-    "./quota-types.ts": "./lib/shared/quota-types.ts"
+    ".": "./dist/index.js",
+    "./types.ts": "./dist/lib/types.js",
+    "./dashboard.ts": "./dist/lib/dashboard.js",
+    "./fetch.ts": "./dist/lib/fetch.js",
+    "./usage-api.ts": "./dist/lib/usage-api.js",
+    "./lib/types.ts": "./dist/lib/types.js",
+    "./lib/dashboard.ts": "./dist/lib/dashboard.js",
+    "./lib/fetch.ts": "./dist/lib/fetch.js",
+    "./lib/usage-api.ts": "./dist/lib/usage-api.js",
+    "./auth.ts": "./dist/lib/auth/auth.js",
+    "./web-sessions.ts": "./dist/lib/auth/web-sessions.js",
+    "./cursor.ts": "./dist/lib/cursor/cursor.js",
+    "./commandcode.ts": "./dist/lib/commandcode/commandcode.js",
+    "./openference.ts": "./dist/lib/openference/openference.js",
+    "./format.ts": "./dist/lib/shared/format.js",
+    "./quota-types.ts": "./dist/lib/shared/quota-types.js"
   },
   "files": [
-    "index.ts",
-    "lib/",
+    "dist/",
     "README.md",
     "LICENSE"
   ],
   "scripts": {
+    "build": "tsc",
+    "prepublishOnly": "npm run build",
     "test": "node --experimental-strip-types --test tests/*.test.ts",
     "typecheck": "tsc --noEmit --strict --allowImportingTsExtensions --moduleResolution bundler --module esnext --target esnext --skipLibCheck index.ts"
   },
   "devDependencies": {
     "@types/node": "^22.0.0",
-    "typescript": "^5.0.0"
+    "typescript": "^5.9.3"
   }
 }
