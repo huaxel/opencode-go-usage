@@ -38,6 +38,8 @@ function asObject(value: unknown): JsonObject | undefined {
 }
 
 function finiteNumber(value: unknown): number | undefined {
+  if (typeof value !== "number" && typeof value !== "string") return undefined;
+  if (typeof value === "string" && !value.trim()) return undefined;
   const n = Number(value);
   return Number.isFinite(n) ? n : undefined;
 }

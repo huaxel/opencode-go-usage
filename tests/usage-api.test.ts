@@ -19,11 +19,7 @@ const FIXTURE_JSON = {
 const NOW = Date.parse("2026-08-12T12:03:22.155Z");
 
 function fakeResponse(status = 200, body: unknown = FIXTURE_JSON) {
-  return {
-    ok: status < 400,
-    status,
-    json: async () => body,
-  };
+  return Response.json(body, { status });
 }
 
 test("parseUsageApiJson maps percent/resetsAt into usage windows", () => {
@@ -57,6 +53,13 @@ test("parseUsageApiJson returns nulls for malformed input", () => {
   }
 });
 
+test("parseUsageApiJson does not coerce malformed percentages into headroom", () => {
+  for (const percent of [null, undefined, "", " ", false, true, [], {}, "0", NaN, Infinity]) {
+    assert.equal(parseUsageApiJson({ usage: { rolling: { percent } } }, NOW).rolling, null);
+  }
+  assert.equal(parseUsageApiJson({ usage: { rolling: { percent: 0 } } }, NOW).rolling?.usagePercent, 0);
+});
+
 test("fetchUsageApi sends Bearer auth and parses response", async () => {
   let seen: RequestInit | undefined;
   let seenUrl: string | undefined;
@@ -73,6 +76,44 @@ test("fetchUsageApi sends Bearer auth and parses response", async () => {
   assert.equal(headers.get("authorization"), "Bearer sk-test");
   assert.equal(result.error, undefined);
   assert.equal(result.rolling?.usagePercent, 15);
+});
+
+test("fetchUsageApi bounds declared and streamed response bodies", async () => {
+  for (const response of [
+    new Response("", { headers: { "content-length": String(64 * 1024 + 1) } }),
+    new Response(new ReadableStream({ start(controller) { controller.enqueue(new Uint8Array(64 * 1024 + 1)); controller.close(); } })),
+  ]) {
+    const result = await fetchUsageApi("sk-test", { fetchImpl: async () => response });
+    assert.equal(result.error, "response-too-large");
+    assert.equal(result.rolling, null);
+  }
+});
+
+test("fetchUsageApi keeps timeout active during body reads", async () => {
+  let aborted = false;
+  let fallback: ReturnType<typeof setTimeout> | undefined;
+  try {
+    const result = await fetchUsageApi("sk-test", {
+      timeoutMs: 15,
+      fetchImpl: async (_input, init) => new Response(new ReadableStream({
+        start(controller) {
+          init?.signal?.addEventListener("abort", () => { aborted = true; controller.error(new Error("aborted")); }, { once: true });
+          fallback = setTimeout(() => controller.error(new Error("fallback")), 200);
+        },
+      })),
+    });
+    assert.equal(aborted, true);
+    assert.equal(result.error, "aborted");
+  } finally { clearTimeout(fallback); }
+});
+
+test("fetchUsageApi suppresses private malformed JSON and refuses redirects", async () => {
+  const result = await fetchUsageApi("sk-test", { fetchImpl: async (_input, init) => {
+    assert.equal(init?.redirect, "error");
+    return new Response("private-sentinel not-json");
+  } });
+  assert.equal(result.error, "invalid-response");
+  assert.ok(!JSON.stringify(result).includes("private-sentinel"));
 });
 
 test("fetchUsageApi maps 401 to auth-expired", async () => {

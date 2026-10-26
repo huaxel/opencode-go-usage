@@ -106,6 +106,16 @@ test("parseOpenferenceUsage returns no windows when limits are missing", () => {
   assert.deepEqual(parseOpenferenceUsage(null, NOW), []);
 });
 
+test("parseOpenferenceUsage rejects malformed counts instead of inventing zero usage", () => {
+  for (const value of [null, undefined, "", " ", false, true, [], {}, NaN, Infinity]) {
+    assert.deepEqual(parseOpenferenceUsage({ usage: { windowQuotaUsed: value }, plan: { requestsPerWindow: 800 } }, NOW), []);
+    assert.deepEqual(parseOpenferenceUsage({ usage: { windowQuotaUsed: 1 }, plan: { requestsPerWindow: value } }, NOW), []);
+  }
+  assert.equal(parseOpenferenceUsage({ usage: { windowQuotaUsed: "0" }, plan: { requestsPerWindow: "800" } }, NOW)[0]?.usedPercent, 0);
+  const fallback = parseOpenferenceUsage({ usage: { windowQuotaUsed: null }, limits: { windowQuotaUsed: 400 }, plan: { requestsPerWindow: 800 } }, NOW);
+  assert.equal(fallback[0]?.usedPercent, 50);
+});
+
 test("fetchOpenferenceUsage targets the dashboard profile endpoint with Bearer auth", async () => {
   let seenUrl = "";
   let seen: RequestInit | undefined;

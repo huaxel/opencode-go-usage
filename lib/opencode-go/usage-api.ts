@@ -23,6 +23,30 @@ export interface FetchUsageApiOptions {
 }
 
 export const USAGE_API_URL = "https://opencode.ai/zen/go/v1/usage";
+const MAX_RESPONSE_BYTES = 64 * 1024;
+
+async function responseJsonLimited(response: Response): Promise<unknown> {
+  const length = Number(response.headers.get("content-length"));
+  if (Number.isFinite(length) && length > MAX_RESPONSE_BYTES) throw new Error("response-too-large");
+  const reader = response.body?.getReader();
+  if (!reader) throw new Error("invalid-response");
+  const chunks: Uint8Array[] = [];
+  let total = 0;
+  try {
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      total += value.byteLength;
+      if (total > MAX_RESPONSE_BYTES) throw new Error("response-too-large");
+      chunks.push(value);
+    }
+  } finally { reader.releaseLock(); }
+  const bytes = new Uint8Array(total);
+  let offset = 0;
+  for (const chunk of chunks) { bytes.set(chunk, offset); offset += chunk.byteLength; }
+  try { return JSON.parse(new TextDecoder().decode(bytes)); }
+  catch { throw new Error("invalid-response"); }
+}
 
 /**
  * Parse the usage API JSON response into the shared usage-window shape.
@@ -44,8 +68,8 @@ export function parseUsageApiJson(
     source: { status?: string; percent?: number; resetsAt?: string } | undefined,
   ): OpenCodeGoWindow | null => {
     if (!source || typeof source !== "object") return null;
-    const percent = Number(source.percent);
-    if (!Number.isFinite(percent)) return null;
+    const percent = source.percent;
+    if (typeof percent !== "number" || !Number.isFinite(percent)) return null;
     let resetInSec = 0;
     const resetsAt = source.resetsAt;
     if (typeof resetsAt === "string" && resetsAt.trim()) {
@@ -81,27 +105,27 @@ export async function fetchUsageApi(
     fetchImpl = fetch,
     now = Date.now,
   } = options;
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
   try {
-    const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), timeoutMs);
-    let response: Response;
-    try {
-      response = await fetchImpl(USAGE_API_URL, {
-        headers: { Authorization: `Bearer ${apiKey}` },
-        signal: controller.signal,
-      });
-    } finally {
-      clearTimeout(timer);
-    }
+    const response = await fetchImpl(USAGE_API_URL, {
+      headers: { Authorization: `Bearer ${apiKey}` },
+      redirect: "error",
+      signal: controller.signal,
+    });
     if (response.status === 401 || response.status === 403) {
       return { rolling: null, weekly: null, monthly: null, error: "auth-expired" };
     }
     if (!response.ok) throw new Error(`HTTP ${response.status}`);
-    const parsed = parseUsageApiJson(await response.json(), now());
+    const parsed = parseUsageApiJson(await responseJsonLimited(response), now());
     return parsed;
   } catch (error) {
     const message =
       error instanceof Error ? error.message : String(error ?? "unknown");
     return { rolling: null, weekly: null, monthly: null, error: message };
+  } finally {
+    clearTimeout(timer);
+    // Also close unread error bodies and reject an in-flight body read on timeout.
+    controller.abort();
   }
 }
