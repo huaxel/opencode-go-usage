@@ -1,6 +1,6 @@
 {
   "name": "@juanbenjumea/opencode-go-usage",
-  "version": "0.3.1",
+  "version": "0.3.2",
   "description": "Shared provider usage fetchers for Pi extensions and agentq: OpenCode Go API, Cursor and CommandCode billing, quota-sessions auth.",
   "type": "module",
   "license": "MIT",
