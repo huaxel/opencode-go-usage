@@ -1,6 +1,6 @@
 {
   "name": "@juanbenjumea/pi-provider-usage-fetcher",
-  "version": "0.3.3",
+  "version": "0.3.4",
   "description": "Multi-provider usage fetchers for coding assistant subscriptions, including OpenCode Go, Claude, Codex, Cursor, Copilot, Gemini, Kimi, and more.",
   "type": "module",
   "license": "MIT",
