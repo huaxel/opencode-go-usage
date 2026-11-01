@@ -26,10 +26,15 @@ export const USAGE_API_URL = "https://opencode.ai/zen/go/v1/usage";
 const MAX_RESPONSE_BYTES = 64 * 1024;
 
 async function responseJsonLimited(response: Response): Promise<unknown> {
-  const length = Number(response.headers.get("content-length"));
+  const length = Number(response.headers?.get?.("content-length"));
   if (Number.isFinite(length) && length > MAX_RESPONSE_BYTES) throw new Error("response-too-large");
   const reader = response.body?.getReader();
-  if (!reader) throw new Error("invalid-response");
+  if (!reader) {
+    if (typeof (response as any).json === "function") {
+      return await (response as any).json();
+    }
+    throw new Error("invalid-response");
+  }
   const chunks: Uint8Array[] = [];
   let total = 0;
   try {

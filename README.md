@@ -1,4 +1,4 @@
-# @juanbenjumea/opencode-go-usage
+# @juanbenjumea/pi-provider-usage-fetcher
 
 Shared **provider usage** library for Pi extensions, agentq, and other tooling.
 
@@ -7,6 +7,15 @@ Despite the name (historical), this package covers more than OpenCode Go:
 | Provider | Auth | Source |
 |---|---|---|
 | **OpenCode Go** | API key (same as chat) | `GET https://opencode.ai/zen/go/v1/usage` |
+| **Claude** | macOS keychain, `auth.json`, explicit apiKey | `GET https://api.anthropic.com/api/oauth/usage` |
+| **Codex** | `auth.json`, `~/.codex/auth.json`, explicit apiKey | `GET https://chatgpt.com/backend-api/wham/usage` |
+| **ClinePass** | `CLINE_API_KEY`, `auth.json`, explicit apiKey | `api.cline.bot/api/v1/*` |
+| **Umans** | `UMANS_API_KEY`, `auth.json`, explicit apiKey | `GET https://api.code.umans.ai/v1/usage` |
+| **Copilot** | `auth.json` (`github-copilot`), explicit apiKey | `GET https://api.github.com/copilot_internal/user` |
+| **Gemini** | `auth.json`, `~/.gemini/oauth_creds.json`, explicit apiKey | `POST https://cloudcode-pa.googleapis.com/v1internal:retrieveUserQuota` |
+| **Kimi Coding** | `KIMI_API_KEY`, `auth.json`, explicit apiKey | `GET https://api.kimi.com/coding/v1/usages` |
+| **Synthetic** | `SYNTHETIC_API_KEY`, `auth.json`, explicit apiKey | `GET https://api.synthetic.new/v2/quotas` |
+| **z.ai / GLM** | Region-specific environment key, `auth.json`, explicit apiKey | `GET {api.z.ai or open.bigmodel.cn}/api/monitor/usage/quota/limit` |
 | **Cursor** | `quota-sessions.json`, env, CodexBar, Cursor app DB | `cursor.com/api/usage-summary` |
 | **CommandCode** | `quota-sessions.json`, env, CodexBar | `api.commandcode.ai/internal/billing/*` |
 | **Openference** | API key from caller, `OPENFERENCE_API_KEY`, or `auth.json` | `GET https://openference.com/api/user/me` |
@@ -16,15 +25,31 @@ Legacy OpenCode Go dashboard cookie scraping remains as a fallback when no API k
 ## Install
 
 ```bash
-npm install @juanbenjumea/opencode-go-usage
+npm install @juanbenjumea/pi-provider-usage-fetcher
 ```
 
-Monorepo consumers: `"@juanbenjumea/opencode-go-usage": "file:../opencode-go-usage"`.
+Monorepo consumers: `"@juanbenjumea/pi-provider-usage-fetcher": "file:../opencode-go-usage"`.
+
+## Unified Dispatch
+
+```ts
+import { detectProvider, fetchProviderUsage, fetchAllProviderUsage } from "@juanbenjumea/pi-provider-usage-fetcher";
+
+// Automatically detects alias ("anthropic", "github-copilot", "opencode", etc.)
+const canonical = detectProvider("anthropic"); // "claude"
+
+// Fetches and normalizes quota snapshot across any supported provider
+const snapshot = await fetchProviderUsage("anthropic", { apiKey: "..." });
+// { provider: "Claude", windows: [ { label: "5h", usedPercent: 45, resetsIn: "1h30m" }, ... ], fetchedAt }
+
+// Or collect several providers concurrently; unknown providers are omitted.
+const snapshots = await fetchAllProviderUsage(["anthropic", "openai-codex", "cursor"]);
+```
 
 ## OpenCode Go (API-first)
 
 ```ts
-import { fetchUsageApi } from "@juanbenjumea/opencode-go-usage";
+import { fetchUsageApi } from "@juanbenjumea/pi-provider-usage-fetcher";
 
 const usage = await fetchUsageApi(process.env.OPENCODE_GO_KEY!);
 // { rolling, weekly, monthly, error? }
@@ -33,9 +58,9 @@ const usage = await fetchUsageApi(process.env.OPENCODE_GO_KEY!);
 ## Cursor / CommandCode
 
 ```ts
-import { fetchCursorUsage } from "@juanbenjumea/opencode-go-usage/cursor.ts";
-import { fetchCommandCodeUsage } from "@juanbenjumea/opencode-go-usage/commandcode.ts";
-import { fetchOpenferenceUsage } from "@juanbenjumea/opencode-go-usage/openference.ts";
+import { fetchCursorUsage } from "@juanbenjumea/pi-provider-usage-fetcher/cursor.ts";
+import { fetchCommandCodeUsage } from "@juanbenjumea/pi-provider-usage-fetcher/commandcode.ts";
+import { fetchOpenferenceUsage } from "@juanbenjumea/pi-provider-usage-fetcher/openference.ts";
 
 // Footer labels (Plan / Auto / API)
 await fetchCursorUsage();
@@ -59,6 +84,6 @@ Auth resolution order: provider-specific explicit key → environment variable �
 - `@juanbenjumea/pi-multi-opencode-go` — failover usage polling
 - **agentq** — `data/quota.json` collector
 
-## Future
+## Package rename
 
-A rename to `@juanbenjumea/provider-usage` may happen in a major release; subpath exports will remain stable through 0.x.
+This package is published as `@juanbenjumea/pi-provider-usage-fetcher`. Existing consumers of the former `@juanbenjumea/opencode-go-usage` npm package must switch their dependency and imports when adopting this package; the old package identity remains separate.

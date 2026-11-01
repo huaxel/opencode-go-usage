@@ -1,18 +1,21 @@
 {
-  "name": "@juanbenjumea/opencode-go-usage",
-  "version": "0.3.2",
-  "description": "Shared provider usage fetchers for Pi extensions and agentq: OpenCode Go API, Cursor and CommandCode billing, quota-sessions auth.",
+  "name": "@juanbenjumea/pi-provider-usage-fetcher",
+  "version": "0.3.3",
+  "description": "Multi-provider usage fetchers for coding assistant subscriptions, including OpenCode Go, Claude, Codex, Cursor, Copilot, Gemini, Kimi, and more.",
   "type": "module",
   "license": "MIT",
   "author": "Juan Benjumea",
   "keywords": [
+    "pi",
+    "provider",
+    "fetcher",
+    "quota",
+    "usage",
+    "dashboard",
     "opencode",
     "opencode-go",
     "cursor",
-    "commandcode",
-    "quota",
-    "usage",
-    "dashboard"
+    "commandcode"
   ],
   "repository": {
     "type": "git",
@@ -41,7 +44,18 @@
     "./commandcode.ts": "./dist/lib/commandcode/commandcode.js",
     "./openference.ts": "./dist/lib/openference/openference.js",
     "./format.ts": "./dist/lib/shared/format.js",
-    "./quota-types.ts": "./dist/lib/shared/quota-types.js"
+    "./quota-types.ts": "./dist/lib/shared/quota-types.js",
+    "./provider.ts": "./dist/lib/provider/index.js",
+    "./dispatch.ts": "./dist/lib/provider/dispatch.js",
+    "./claude.ts": "./dist/lib/claude/claude.js",
+    "./codex.ts": "./dist/lib/codex/codex.js",
+    "./cline.ts": "./dist/lib/cline/cline.js",
+    "./umans.ts": "./dist/lib/umans/umans.js",
+    "./copilot.ts": "./dist/lib/copilot/copilot.js",
+    "./gemini.ts": "./dist/lib/gemini/gemini.js",
+    "./kimi.ts": "./dist/lib/kimi/kimi.js",
+    "./synthetic.ts": "./dist/lib/synthetic/synthetic.js",
+    "./zai.ts": "./dist/lib/zai/zai.js"
   },
   "files": [
     "dist/",

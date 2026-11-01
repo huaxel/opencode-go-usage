@@ -1,8 +1,17 @@
-export function clampPercent(v: number): number {
-  return Number.isFinite(v) ? Math.max(0, Math.min(100, v)) : 0;
+export function clampPercent(value: number): number {
+  if (Number.isNaN(value)) return 0;
+  if (!Number.isFinite(value)) return value > 0 ? 100 : 0;
+  return Math.max(0, Math.min(100, value));
+}
+
+export function normalizePercent(value: number): number {
+  if (!Number.isFinite(value)) return 0;
+  const normalized = value <= 1 && value >= 0 ? value * 100 : value;
+  return clampPercent(normalized);
 }
 
 export function formatResetTime(date: Date): string {
+  if (!Number.isFinite(date.getTime())) return "unknown";
   const diffMs = date.getTime() - Date.now();
   if (diffMs <= 0) return "now";
   const diffMins = Math.floor(diffMs / 60000);
