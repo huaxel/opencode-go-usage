@@ -1,7 +1,7 @@
 {
   "name": "@juanbenjumea/pi-provider-usage-fetcher",
-  "version": "0.3.4",
-  "description": "Multi-provider usage fetchers for coding assistant subscriptions, including OpenCode Go, Claude, Codex, Cursor, Copilot, Gemini, Kimi, and more.",
+  "version": "0.3.5",
+  "description": "Multi-provider usage fetchers for coding assistant subscriptions, including OpenCode Go, Claude, Codex, Grok, Cursor, Copilot, Gemini, Kimi, and more.",
   "type": "module",
   "license": "MIT",
   "author": "Juan Benjumea",
@@ -55,7 +55,8 @@
     "./gemini.ts": "./dist/lib/gemini/gemini.js",
     "./kimi.ts": "./dist/lib/kimi/kimi.js",
     "./synthetic.ts": "./dist/lib/synthetic/synthetic.js",
-    "./zai.ts": "./dist/lib/zai/zai.js"
+    "./zai.ts": "./dist/lib/zai/zai.js",
+    "./grok.ts": "./dist/lib/grok/grok.js"
   },
   "files": [
     "dist/",

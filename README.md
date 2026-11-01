@@ -16,11 +16,14 @@ Despite the name (historical), this package covers more than OpenCode Go:
 | **Kimi Coding** | `KIMI_API_KEY`, `auth.json`, explicit apiKey | `GET https://api.kimi.com/coding/v1/usages` |
 | **Synthetic** | `SYNTHETIC_API_KEY`, `auth.json`, explicit apiKey | `GET https://api.synthetic.new/v2/quotas` |
 | **z.ai / GLM** | Region-specific environment key, `auth.json`, explicit apiKey | `GET {api.z.ai or open.bigmodel.cn}/api/monitor/usage/quota/limit` |
+| **Grok / SuperGrok** | `GROK_OAUTH_TOKEN`, `GROK_ACCESS_TOKEN`, `auth.json` (`grok`), or `~/.grok/auth.json` | Grok CLI billing proxy (`cli-chat-proxy.grok.com/v1/billing?format=credits`) |
 | **Cursor** | `quota-sessions.json`, env, CodexBar, Cursor app DB | `cursor.com/api/usage-summary` |
 | **CommandCode** | `quota-sessions.json`, env, CodexBar | `api.commandcode.ai/internal/billing/*` |
 | **Openference** | API key from caller, `OPENFERENCE_API_KEY`, or `auth.json` | `GET https://openference.com/api/user/me` |
 
 Legacy OpenCode Go dashboard cookie scraping remains as a fallback when no API key is configured.
+
+Grok reports **subscription credits**, not xAI API spend. Its quota adapter follows the Grok CLI billing route observed in CodexBar; this is a private CLI endpoint and may change. It does not use xAI inference API keys or xAI Management API spend endpoints.
 
 ## Install
 

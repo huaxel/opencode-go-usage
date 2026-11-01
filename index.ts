@@ -21,4 +21,5 @@ export * from "./lib/gemini/gemini.ts";
 export * from "./lib/kimi/kimi.ts";
 export * from "./lib/synthetic/synthetic.ts";
 export * from "./lib/zai/zai.ts";
+export * from "./lib/grok/grok.ts";
 export * from "./lib/provider/dispatch.ts";

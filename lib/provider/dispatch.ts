@@ -8,6 +8,7 @@ import { fetchGeminiUsage } from "../gemini/gemini.ts";
 import { fetchKimiUsage } from "../kimi/kimi.ts";
 import { fetchSyntheticUsage } from "../synthetic/synthetic.ts";
 import { fetchZaiUsage } from "../zai/zai.ts";
+import { fetchGrokUsage } from "../grok/grok.ts";
 import { fetchCursorUsage } from "../cursor/cursor.ts";
 import { fetchCommandCodeUsage } from "../commandcode/commandcode.ts";
 import { fetchOpenferenceUsage } from "../openference/openference.ts";
@@ -36,6 +37,9 @@ export const PROVIDER_MAP: Record<string, string> = {
   zai: "zai",
   "z.ai": "zai",
   "glm-coding-plan": "zai",
+  grok: "grok",
+  supergrok: "grok",
+  "grok-cli": "grok",
   cursor: "cursor",
   commandcode: "commandcode",
   openference: "openference",
@@ -60,6 +64,7 @@ export const PROVIDER_FETCHERS: Record<string, ProviderFetcher> = {
   kimi: (options) => fetchKimiUsage(options),
   synthetic: fetchSyntheticUsage,
   zai: fetchZaiUsage,
+  grok: fetchGrokUsage,
   cursor: () => fetchCursorUsage(),
   commandcode: () => fetchCommandCodeUsage(),
   openference: (options) => fetchOpenferenceUsage(options?.apiKey, options),
